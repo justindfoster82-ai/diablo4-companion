@@ -1,0 +1,26 @@
+@keyframes rise { from { opacity: 0; transform: translateY(18px) scale(.97); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes springPop { 0% { transform: scale(.6) rotate(-8deg); opacity: 0; } 55% { transform: scale(1.12) rotate(2deg); opacity: 1; } 75% { transform: scale(.96); } 100% { transform: scale(1); } }
+@keyframes bloom { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 80%, transparent); filter: brightness(1.8); } 100% { box-shadow: 0 0 0 26px transparent; filter: none; } }
+@keyframes vignettePulse { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
+@keyframes runeFlow { to { stroke-dashoffset: -40; } }
+@keyframes glowPulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@keyframes slideUp { from { transform: translateY(105%); } to { transform: none; } }
+@keyframes flicker { 0%,100% { opacity: 1; } 45% { opacity: .82; } 50% { opacity: .95; } 70% { opacity: .78; } }
+
+.view.enter .reveal { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+.view.swap-left .reveal, .view.swap-right .reveal { animation: rise .6s cubic-bezier(.2,.9,.25,1.15) both; animation-delay: calc(var(--i, 0) * 50ms); }
+.view.swap-left { animation: swapL .45s cubic-bezier(.2,.9,.25,1.1); } .view.swap-right { animation: swapR .45s cubic-bezier(.2,.9,.25,1.1); }
+@keyframes swapL { from { transform: translateX(34px); } to { transform: none; } }
+@keyframes swapR { from { transform: translateX(-34px); } to { transform: none; } }
+.crest-pop { animation: springPop .7s cubic-bezier(.3,1.6,.5,1) both; }
+.bloom { animation: bloom .8s ease-out; border-radius: 50%; }
+.vignette { animation: vignettePulse 6s ease-in-out infinite; }
+.rune-path { stroke-dasharray: 10 10; animation: runeFlow 1.4s linear infinite; }
+.glow-pulse { animation: glowPulse 2.4s ease-in-out infinite; }
+.title-fire { background: linear-gradient(90deg, var(--gold-hi), var(--accent2), var(--gold-hi)); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shimmer 6s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .rune-path { stroke-dasharray: none; }
+}
