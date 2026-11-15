@@ -1,7 +1,7 @@
 // Hellforge service worker.
 // - Season data (./data/seasons/*.json): network-first, so a pushed season file lands on next open.
 // - App shell: stale-while-revalidate (instant load, refreshed in the background).
-const VERSION = 'hellforge-v1';
+const VERSION = 'hellforge-v2-real-20261115';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './styles/theme.css', './styles/layout.css', './styles/animations.css',
   './src/app.js', './src/state.js', './src/embers.js', './src/crests.js', './src/components/classSlider.js', './src/components/panZoom.js',
   './src/views/builds.js', './src/views/skillTree.js', './src/views/paragon.js', './src/views/tierList.js', './src/views/season.js',

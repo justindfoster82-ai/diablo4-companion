@@ -10,26 +10,27 @@ export function nodeInfo(bd, x, y) {
   const ch = bd.rows[y]?.[x];
   if (!ch || ch === '.') return null;
   if (ATTR_LETTER[ch]) return { type: 'Normal', stat: `+5 ${ATTR[ATTR_LETTER[ch]]}`, attr: ATTR_LETTER[ch] };
-  if (ch === 'm') return { type: 'Magic', stat: bd.magicStats[(x * 7 + y * 3) % bd.magicStats.length] };
-  if (ch === 'R') { const r = bd.rares.find((q) => q.at[0] === x && q.at[1] === y); return { type: 'Rare', name: r.name, stat: r.stats.join(' · '), bonus: `Bonus: ${r.bonus.text} (requires ${r.bonus.requires.amount} ${ATTR[r.bonus.requires.attr]})` }; }
+  if (ch === 'm') return { type: 'Magic', stat: (bd.magic && bd.magic[x + ',' + y]) || 'Magic node' };
+  if (ch === 'R') { const r = bd.rares.find((q) => q.at[0] === x && q.at[1] === y); return { type: 'Rare', name: r.name, stat: r.stats.join(' · '), bonus: `Bonus: ${r.bonus.text}` }; }
   if (ch === 'L') return { type: 'Legendary', name: bd.legendary.name, stat: bd.legendary.effect };
   if (ch === 'G') return { type: 'Glyph Socket', stat: 'Socket a Glyph. Its radius counts attribute points from allocated nodes.' };
   if (ch === 'X') return { type: 'Board Gate', stat: 'Attach the next board here.' };
   if (ch === 'S') return { type: 'Start', stat: 'Starting node of the Paragon path.' };
 }
-export function glyphCheck(gl, pb) { return `${pb.glyph.achieved}/${gl.threshold} ${ATTR_SHORT[gl.attr]} ${pb.glyph.achieved >= gl.threshold ? '✓' : '✗'}`; }
+export const glyphOf = (c, pb) => { const g = pb.glyph && c.glyphById[pb.glyph.id]; return g ? { ...g } : { name: 'No glyph', attr: null, radius: 0, threshold: null, bonus: '', effect: 'The guide leaves this socket empty.' }; };
+export function glyphCheck(gl, pb) { return pb.glyph ? `Lv ${pb.glyph.level ?? '?'}` : '—'; }
 
 export function render(el, ctx) {
   const { c, state, setState } = ctx;
   const ends = c.builds.filter((b) => b.phase === 'endgame');
   const sel = ends.find((b) => b.id === state.paragonSel[c.id]) || ends[0];
-  const P = sel.paragon; const bi = Math.min(4, state.boardIdx || 0); const mode = state.paragonMode;
+  const P = sel.paragon; const bi = Math.min(P.boards.length - 1, state.boardIdx || 0); const mode = state.paragonMode;
   const bname = (pb) => c.boardById[pb.boardId].name;
   el.innerHTML = `
-   <div class="view-title reveal"><h2 class="serif">Paragon</h2><span class="chip gold">${P.totalPoints} pts · 5 boards</span></div>
+   <div class="view-title reveal"><h2 class="serif">Paragon</h2><span class="chip gold">${P.totalPoints} pts · ${P.boards.length} boards</span></div>
    ${buildPills(c, ends, sel.id, 'data-b')}
    <div class="seg reveal" role="group" aria-label="View mode"><button data-m="grid" aria-pressed="${mode === 'grid'}">Board Grid</button><button data-m="summary" aria-pressed="${mode === 'summary'}">Path Summary</button></div>
-   <div class="chain reveal" data-noswipe>${P.boards.map((pb, i) => { const bd = c.boardById[pb.boardId]; const gl = c.glyphById[pb.glyph.id];
+   <div class="chain reveal" data-noswipe>${P.boards.map((pb, i) => { const bd = c.boardById[pb.boardId]; const gl = glyphOf(c, pb);
      return `<button class="bcard" data-bi="${i}" aria-pressed="${mode === 'grid' && i === bi}"><span class="bn">Board ${i + 1}${i ? '' : ' · Starter'}</span><h3>${esc(bd.name)}</h3>
       <div class="row"><span>Rotation</span><b>${pb.rotation}°</b></div><div class="row"><span>Legendary</span><b>${bd.legendary ? esc(bd.legendary.name) : '—'}</b></div>
       <div class="row"><span>Glyph</span><b>${esc(gl.name)}</b></div><div class="row"><span>Spent</span><b style="color:var(--gold-hi)">${pb.points} pts</b></div></button>`; }).join('<span style="align-self:center;color:var(--gold)">›</span>')}</div>
@@ -40,20 +41,20 @@ export function render(el, ctx) {
   const body = el.querySelector('#pBody');
 
   if (mode === 'summary') {
-    body.innerHTML = P.boards.map((pb, i) => { const bd = c.boardById[pb.boardId]; const gl = c.glyphById[pb.glyph.id]; const ok = pb.glyph.achieved >= gl.threshold;
+    body.innerHTML = P.boards.map((pb, i) => { const bd = c.boardById[pb.boardId]; const gl = glyphOf(c, pb); const ok = !!pb.glyph;
       const rares = bd.rares.filter((r) => pb.alloc.some(([x, y]) => x === r.at[0] && y === r.at[1]));
       return `<section class="card reveal"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><div class="section-lbl" style="margin:0">Board ${i + 1} · attach order ${pb.attachOrder}</div><h3 class="serif" style="font-size:16px">${esc(bd.name)}</h3></div><span class="chip gold">${pb.points} pts</span></div>
-       <dl class="kv" style="margin-top:10px"><dt>Rotation</dt><dd>${pb.rotation}° ${i ? '· attached via previous board\'s top gate' : '· starting board'}</dd>
-       <dt>Glyph</dt><dd><b>${esc(gl.name)}</b> (radius ${gl.radius}) · <span class="glyphcheck ${ok ? 'ok' : 'no'}">${glyphCheck(gl, pb)}</span></dd>
+       <dl class="kv" style="margin-top:10px"><dt>Rotation</dt><dd>${pb.rotation}° ${i ? '· attached to the previous board' : '· starting board'}</dd>
+       <dt>Glyph</dt><dd><b>${esc(gl.name)}</b> · <span class="glyphcheck ${ok ? 'ok' : 'no'}">${glyphCheck(gl, pb)}</span></dd>
        <dt>Legendary</dt><dd>${bd.legendary ? `<b style="color:var(--accent2)">${esc(bd.legendary.name)}</b> — ${esc(bd.legendary.effect)}` : '—'}</dd>
        <dt>Key rares</dt><dd>${rares.map((r) => `<b>${esc(r.name)}</b> <span class="muted">(${esc(r.bonus.text)})</span>`).join('<br>') || '—'}</dd></dl>
-       <p class="muted" style="font-size:12px;margin-bottom:0">${esc(gl.bonus)}</p></section>`; }).join('') + `<p class="footer-note">Paths are representative layouts for planning — verify node-by-node in a live planner.</p>`;
+       <p class="muted" style="font-size:12px;margin-bottom:0">${esc(gl.bonus)}</p></section>`; }).join('') + `<p class="footer-note">Allocated nodes, boards, rotations and glyphs from the build guide's Maxroll planner (${esc(sel.sources[0].title || 'guide')}); path lines show a connected order, not the guide's click order. <a href="${esc(sel.sources[0].url)}" target="_blank" rel="noopener">Open guide</a></p>`;
     return;
   }
 
-  const pb = P.boards[bi]; const bd = c.boardById[pb.boardId]; const gl = c.glyphById[pb.glyph.id];
+  const pb = P.boards[bi]; const bd = c.boardById[pb.boardId]; const gl = glyphOf(c, pb);
   const on = new Set(pb.alloc.map(([x, y]) => x + ',' + y));
-  const inR = (x, y) => Math.abs(x - bd.socket[0]) + Math.abs(y - bd.socket[1]) <= gl.radius;
+  const inR = () => false; // glyph radius depends on glyph level; not shown
   let cells = '';
   for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
     const ch = bd.rows[y][x]; if (ch === '.') continue; const a = on.has(x + ',' + y); const X = PAD + x * CS, Y = PAD + y * CS; let s;
@@ -73,7 +74,7 @@ export function render(el, ctx) {
   body.innerHTML = fixVars(`<div class="mapwrap reveal" data-noswipe style="height:min(58vh,520px)"><svg id="pg" viewBox="0 0 ${SIZE} ${SIZE}" preserveAspectRatio="xMidYMid meet"><g id="pgz"><g transform="rotate(${pb.rotation} ${MID} ${MID})">
      <defs><filter id="pglow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.4"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
      <rect x="2" y="2" width="${SIZE - 4}" height="${SIZE - 4}" rx="14" fill="rgba(10,8,12,.6)" stroke="#C89B3C" stroke-opacity=".35"/>
-     <polygon points="${gx},${gy - rr} ${gx + rr},${gy} ${gx},${gy + rr} ${gx - rr},${gy}" fill="#B57CFF" fill-opacity=".09" stroke="#B57CFF" stroke-opacity=".7" stroke-dasharray="4 4" stroke-width="1.5"/>
+     ${''}<polygon opacity="0" points="${gx},${gy - rr} ${gx + rr},${gy} ${gx},${gy + rr} ${gx - rr},${gy}" fill="#B57CFF" fill-opacity=".09" stroke="#B57CFF" stroke-opacity=".7" stroke-dasharray="4 4" stroke-width="1.5"/>
      <path d="${lines}" stroke="var(--accent)" stroke-width="7" opacity=".3" fill="none" stroke-linecap="round" filter="url(#pglow)"/>
      ${cells}
      <path class="rune-path" d="${lines}" stroke="#FFE3B0" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".9" pointer-events="none"/>
@@ -82,11 +83,11 @@ export function render(el, ctx) {
      <div class="mapctl" style="top:auto;bottom:10px"><button class="icon-btn" data-z="in" aria-label="Zoom in">+</button><button class="icon-btn" data-z="out" aria-label="Zoom out">−</button></div></div>
    <div class="actions reveal" style="margin:10px 0 12px"><button class="btn primary" data-z="glyph">◎ Zoom to Glyph</button><button class="btn" data-z="reset">Reset View</button></div>
    <section class="card reveal inspect" id="pInspect"><div class="section-lbl">Node inspector</div><p class="muted" style="margin:0;font-size:13px">Tap any node on the board.</p></section>
-   <section class="card hot reveal"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><div class="section-lbl" style="margin:0">Glyph · radius ${gl.radius}</div><h3 class="serif" style="font-size:16px">${esc(gl.name)}</h3></div><span class="glyphcheck ${pb.glyph.achieved >= gl.threshold ? 'ok' : 'no'}" style="font-size:18px">${glyphCheck(gl, pb)}</span></div>
+   <section class="card hot reveal"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><div class="section-lbl" style="margin:0">Glyph${gl.attr ? ` · ${ATTR[gl.attr]}` : ''}</div><h3 class="serif" style="font-size:16px">${esc(gl.name)}</h3></div><span class="glyphcheck ${pb.glyph ? 'ok' : 'no'}" style="font-size:18px">${glyphCheck(gl, pb)}</span></div>
      <p style="font-size:13px">${esc(gl.effect)}</p><p class="muted" style="font-size:12.5px;margin:0">${esc(gl.bonus)}</p></section>
    ${bd.legendary ? `<section class="card reveal"><div class="section-lbl">Legendary node</div><h3 class="serif" style="color:var(--accent2)">${esc(bd.legendary.name)}</h3><p style="font-size:13.5px;margin-bottom:0">${esc(bd.legendary.effect)}</p></section>` : ''}
    <section class="card reveal"><div class="section-lbl">Legend</div><div class="legend-grid" style="font-size:12px">
-     <span><i class="sw" style="background:var(--accent)"></i>Normal (taken)</span><span><i class="sw" style="background:#2a2330;border:1px solid #3b3242"></i>Normal</span><span><i class="sw" style="background:#5AA0FF"></i>Magic</span><span><i class="sw" style="background:#FFD45A"></i>Rare</span><span><i class="sw" style="background:#FF6A3A;border-radius:50%"></i>Legendary</span><span><i class="sw" style="border:2px solid #B57CFF;border-radius:50%"></i>Glyph socket</span><span><i class="sw" style="border:2px solid #C89B3C;transform:rotate(45deg)"></i>Gate</span><span><i class="sw" style="background:#E0C6FF;border-radius:50%;width:5px;height:5px"></i>Counts for glyph</span></div></section>`);
+     <span><i class="sw" style="background:var(--accent)"></i>Normal (taken)</span><span><i class="sw" style="background:#2a2330;border:1px solid #3b3242"></i>Normal</span><span><i class="sw" style="background:#5AA0FF"></i>Magic</span><span><i class="sw" style="background:#FFD45A"></i>Rare</span><span><i class="sw" style="background:#FF6A3A;border-radius:50%"></i>Legendary</span><span><i class="sw" style="border:2px solid #B57CFF;border-radius:50%"></i>Glyph socket</span><span><i class="sw" style="border:2px solid #C89B3C;transform:rotate(45deg)"></i>Gate</span></div></section>`);
   const svg = body.querySelector('#pg'), g = body.querySelector('#pgz');
   const pz = panZoom(svg, g, { min: 0.8, max: 5, fit: () => [0, 0, 1] });
   const insp = body.querySelector('#pInspect');

@@ -45,23 +45,25 @@ node scripts/validate-data.mjs   # validate data
 4. Commit + push. The service worker fetches season JSON network-first, so installed apps pick it up on next open.
    If you change app code (JS/CSS), bump `VERSION` in `sw.js` so every device refreshes its shell cache.
 
-### Data model (per class)
-- `skillTree`: `clusters` (Basic → Core → class clusters → Ultimate → Key Passive, each with a point `gate`),
-  `nodes` (active / passive / modifier / key, `maxRank`, map `x/y`), `edges`.
+### Data model (schemaVersion 2, per class)
+- `skillTree`: the real Lord of Hatred tree from game data. `clusters` (Basic → Core → class clusters → Ultimate, with unlock `level`),
+  `nodes` (`active` with 15 ranks / `modifier` upgrades with `parent` + `choiceGroup` (one per row) / `junction` path dots / `hub`),
+  real map `x/y`, `edges`. Off-tree mechanic skills on a bar (e.g. Warlock demon Commands) have `offTree: true`.
+  There are no passives or key passives in the current tree.
 - `paragon.boards`: Starter + 9 class boards. `rows` is a 21×21 string grid:
-  `.` empty · `s d i w` normal +5 Str/Dex/Int/Will · `m` magic · `R` rare · `L` legendary · `G` glyph socket · `X` gate · `S` start.
-  Magic stat = `magicStats[(x*7 + y*3) % magicStats.length]`.
-- `paragon.glyphs`: attribute, radius, threshold.
-- `builds[]`: `phase` (leveling | endgame), `tier`, `tiers{endgame,pushing,leveling}`, tags, playstyle, uniques/mythics,
-  `primeEvil`, 3 `soulSplinters`, 6-slot `skillBar`, `keyPassive`, rotation, gear, `skills.spendOrder` (70 points) +
-  `skills.allocation`; leveling builds carry `guide['1-15']` / `guide['15-70']`; endgame builds carry `paragon.boards[5]`
-  (board, rotation 0/90/180/270, glyph, ordered allocation path in board-local coords).
-- `tierList.entries`: build × activity (endgame / leveling / pushing) × tier S–F with sources.
+  `.` empty · `s d i w` normal +5 Str/Dex/Int/Will · `m` magic (`magic["x,y"]` label) · `R` rare · `L` legendary · `G` glyph socket · `X` gate · `S` start.
+- `paragon.glyphs`: real class glyphs with attribute, bonus text.
+- `builds[]`: `phase`, `tier`, `tiers{endgame,pushing,leveling}`, tags, `sources[]` (site, what, url, updated, checked), playstyle,
+  uniques/mythics, `primeEvil` (null = guide does not specify), up to 3 `soulSplinters`, 6-slot `skillBar`, `mainSkill`, `keyUpgrade`,
+  rotation, gear (aspects + tempering), `skills.allocation` + `skills.spendOrder` (`orderSource`: `guide-steps` or `derived`);
+  leveling builds carry `guide['1-15']` / `guide['15-70']`; endgame builds carry `paragon.boards[≤5]` (board, rotation, glyph, allocated nodes).
+- `tierList.entries`: build × activity (endgame / leveling / pushing) × tier S–F with source site.
 
 ## Data accuracy
-Season facts, class list, build names and tier placements come from the Nov 2026 research snapshot
-(Mobalytics Oct 13, Maxroll Sep 26, Icy Veins Sep 14). Per-build skill ranks, spend orders, paragon paths, glyph picks,
-item and aspect lists are **representative layouts** generated for this app; Warlock, Paladin and Spiritborn skill/board names are
-especially provisional. Verify against a live planner before min-maxing, and replace with sourced data as you go.
+Rebuilt Nov 15, 2026. Skill trees, upgrades, paragon boards, glyphs, items and aspects come from Maxroll's public Diablo IV game data
+(v3.2.1). Builds (skill bar, skill points, gear, paragon) come from Maxroll build-guide planners; tiers from the Mobalytics endgame /
+pushing / leveling tier lists and the Maxroll tier lists (each build lists its sources with dates). Leveling spend orders follow
+the guide's own steps; endgame guides publish final allocations only, so their point order is derived. Paragon path lines show a
+connected order of the guide's allocated nodes, not the guide's click order.
 
 Unofficial fan project — not affiliated with or endorsed by Blizzard Entertainment. No game artwork is used.

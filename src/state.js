@@ -1,7 +1,7 @@
 // Tiny persisted store + shared data registry.
 const KEY = 'hellforge.state.v1';
 const defaults = { classId: null, tab: 'builds', phase: 'endgame', treeSel: {}, paragonSel: {}, skillMode: 'spine', paragonMode: 'grid',
-  boardIdx: 0, tierActivity: 'endgame', tierClass: 'all', step: 70, checks: {}, openBuild: null, showAllNodes: false };
+  boardIdx: 0, tierActivity: 'endgame', tierClass: 'all', step: 0, checks: {}, openBuild: null, showAllNodes: false };
 function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } }
 export const state = { ...defaults, ...load() };
 const subs = new Set();

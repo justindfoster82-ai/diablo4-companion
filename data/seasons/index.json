@@ -1,5 +1,5 @@
 {
- "schemaVersion": 1,
+ "schemaVersion": 2,
  "currentSeasonId": "s15",
  "levelCap": 70,
  "maxParagonBoards": 5,
@@ -21,17 +21,17 @@
    "patch": "3.2.4",
    "file": "./data/seasons/s15.json",
    "launched": "2026-09-15",
-   "ends": "2026-12-01"
+   "ends": "2026-12-08"
   }
  ],
  "updateNotes": [
   {
-   "date": "2026-11-13",
-   "text": "Season 15 dataset (Mobalytics Oct 13 / Maxroll Sep 26 / Icy Veins Sep 14 snapshot)."
+   "date": "2026-11-15",
+   "text": "Rebuilt every skill tree, build and paragon board from real data: Maxroll game data v3.2.1.73552 + build guides, Mobalytics and Maxroll tier lists."
   },
   {
-   "date": "2026-12-01",
-   "text": "Season 16 (3.3.0) expected — add data/seasons/s16.json and point currentSeasonId at it."
+   "date": "2026-12-08",
+   "text": "Season 16 (3.3.0) expected (not announced) \u2014 add data/seasons/s16.json and point currentSeasonId at it."
   }
  ]
 }

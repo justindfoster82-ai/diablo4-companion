@@ -61,7 +61,7 @@ export function go(tab, patch = {}) { closeDrawer(); setState({ ...patch, tab },
 
 function switchClass(id, dir = 1, crestEl) {
   if (id === state.classId) return;
-  setState({ classId: id, boardIdx: 0, step: 70, openBuild: null }, { silent: true });
+  setState({ classId: id, boardIdx: 0, step: 0, openBuild: null }, { silent: true });
   slider.set(id); paintClass(true); render(dir > 0 ? 'swap-left' : 'swap-right'); scrollTo({ top: 0, behavior: 'instant' });
   const el = crestEl || slider.crestEl(id); if (el) { const r = el.getBoundingClientRect(); embers?.burst(r.left + r.width / 2, r.top + r.height / 2, cls().accent); }
   const t = $('#topCrest')?.getBoundingClientRect(); if (t) embers?.burst(t.left + t.width / 2, t.top + t.height / 2, cls().accent2);
